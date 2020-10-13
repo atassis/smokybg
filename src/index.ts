@@ -139,9 +139,9 @@ class Smoke {
 
   circles: Circle[] = [];
 
-  constructor(canvasElement: HTMLCanvasElement, options: ISmokeSettings) {
+  constructor(canvasElement: HTMLCanvasElement, options: ISmokeSettings = {}) {
     this.canvas = canvasElement;
-    const radius = (getElementHeight(this.canvas) * 0.8) / 2;
+    const radius = getElementHeight(this.canvas) * 0.4;
 
     this.settings = {
       gradientStart: '#000000',
@@ -160,7 +160,7 @@ class Smoke {
       minMaxRad: !options.minMaxRad || options.minMaxRad === 'auto' ? radius : options.minMaxRad,
     };
     if (!this.canvas) {
-      throw new Error('you have to provide <canvas /> element in the wrapper')
+      throw new Error('you have to provide an id of <canvas /> element')
     }
     this.displayWidth = this.canvas.clientWidth;
     this.displayHeight = this.canvas.clientHeight;
@@ -193,6 +193,7 @@ class Smoke {
   }
 
   fillBackground() {
+    const { bgColorInner, bgColorOuter } = this.settings;
     if (!this.context) {
       throw new Error('context is set to null!');
     }
@@ -216,8 +217,8 @@ class Smoke {
       outerRad,
     );
 
-    gradient.addColorStop(0, ...getGradientStart(this.settings.bgColorInner));
-    gradient.addColorStop(1, ...getGradientStart(this.settings.bgColorOuter));
+    gradient.addColorStop(0, ...getGradientStart(bgColorInner));
+    gradient.addColorStop(1, ...getGradientStart(bgColorOuter));
     gradient.fillRect(
       this.context,
       0,
@@ -228,16 +229,15 @@ class Smoke {
   }
 
   setCircles() {
+    const { gradientEnd, gradientStart, iterations, maxMaxRad, minMaxRad, minRadFactor, numCircles, smokeOpacity } = this.settings;
     let maxR;
     let minR;
 
     this.circles = [];
 
-    for (let i = 0; i < this.settings.numCircles; i += 1) {
-      maxR =
-        this.settings.minMaxRad +
-        Math.random() * (this.settings.maxMaxRad - this.settings.minMaxRad);
-      minR = this.settings.minRadFactor * maxR;
+    for (let i = 0; i < numCircles; i += 1) {
+      maxR = minMaxRad + Math.random() * (maxMaxRad - minMaxRad);
+      minR = minRadFactor * maxR;
 
       // define gradient
       if (!this.context) {
@@ -247,17 +247,9 @@ class Smoke {
         throw new Error('this.displayHeight is falsy!');
       }
       const grad = this.context.createRadialGradient(0, 0, minR, 0, 0, maxR);
-      const gradientStart = hexToRGBA(
-        this.settings.gradientStart,
-        this.settings.smokeOpacity,
-      );
-      const gradientEnd = hexToRGBA(
-        this.settings.gradientEnd,
-        this.settings.smokeOpacity,
-      );
 
-      grad.addColorStop(1, gradientStart);
-      grad.addColorStop(0, gradientEnd);
+      grad.addColorStop(1, hexToRGBA(gradientStart, smokeOpacity));
+      grad.addColorStop(0, hexToRGBA(gradientEnd, smokeOpacity));
 
       this.circles.push({
         centerX: -maxR,
@@ -269,14 +261,14 @@ class Smoke {
         changeSpeed: 1 / 250,
         phase: Math.random() * TWO_PI, // the phase to use for a single fractal curve.
         globalPhase: Math.random() * TWO_PI, // the curve as a whole will rise and fall by a
-        pointList1: setLinePoints(this.settings.iterations),
-        pointList2: setLinePoints(this.settings.iterations),
+        pointList1: setLinePoints(iterations),
+        pointList2: setLinePoints(iterations),
       });
     }
   }
 
   onTimer() {
-    const { drawsPerFrame, iterations, maxMaxRad, numCircles } = this.settings;
+    const { drawsPerFrame, iterations, lineWidth, maxMaxRad, numCircles } = this.settings;
     if (!this.context) {
       throw new Error('context is set to null!');
     }
@@ -308,7 +300,7 @@ class Smoke {
         cosParam = 0.5 - 0.5 * Math.cos(Math.PI * circle.param);
 
         this.context.strokeStyle = circle.color;
-        this.context.lineWidth = this.settings.lineWidth;
+        this.context.lineWidth = lineWidth;
         this.context.beginPath();
         let point1 = circle.pointList1;
         let point2 = circle.pointList2;

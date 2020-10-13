@@ -10,13 +10,18 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublish": "tsc"
   },
+  "publishConfig": { "registry": "https://npm.pkg.github.com/" },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/atassis/waterpipe.git"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": {
+    "url": "https://github.com/atassis",
+    "name": "Taymuraz Kaytmazov",
+    "email": "atassikay38@gmail.com"
+  },
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/atassis/waterpipe/issues"
   },
