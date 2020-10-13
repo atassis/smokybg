@@ -11,9 +11,9 @@ class SmokeNiceBG {
 
   rad1: number;
 
-  colorStops = [];
+  colorStops: { ratio: number, r: number, g: number, b: number }[] = [];
 
-  constructor(_x0, _y0, _rad0, _x1, _y1, _rad1) {
+  constructor(_x0: number, _y0: number, _rad0: number, _x1: number, _y1: number, _rad1: number) {
     this.x0 = _x0;
     this.y0 = _y0;
     this.x1 = _x1;
@@ -22,7 +22,7 @@ class SmokeNiceBG {
     this.rad1 = _rad1;
   }
 
-  addColorStop(ratio, r, g, b) {
+  addColorStop(ratio: number, r: number, g: number, b: number) {
     if (ratio < 0 || ratio > 1) {
       return;
     }
@@ -55,7 +55,7 @@ class SmokeNiceBG {
     }
   }
 
-  fillRect(ctx, rectX0, rectY0, rectW, rectH) {
+  fillRect(ctx: CanvasRenderingContext2D, rectX0: number, rectY0: number, rectW: number, rectH: number) {
     if (this.colorStops.length === 0) {
       return;
     }

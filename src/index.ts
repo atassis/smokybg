@@ -1,14 +1,3 @@
-/*
- *  waterpipe.js - v1.0
- *  jQuery plugin. Smoky backgrounds generator
- *  http://www.dragdropsite.com
- *
- *  Made by dragdropsite.com
- *
- *  Under MIT License
- *
- *  Credits: rectangleworld.com
- */
 import { SmokeNiceBG } from "./smoky-background";
 
 function getElementHeight(element: Element) {
@@ -38,8 +27,8 @@ type SmokeSettings = {
   gradientEnd: string;
   smokeOpacity: number;
   numCircles: number;
-  maxMaxRad: string;
-  minMaxRad: string;
+  maxMaxRad: number;
+  minMaxRad: number;
   minRadFactor: number;
   iterations: number;
   drawsPerFrame: number;
@@ -55,7 +44,12 @@ interface Point {
   next?: Point;
 }
 
-function setLinePoints(iterations) {
+export type ISmokeSettings = Partial<SmokeSettings> & {
+  maxMaxRad: 'auto' | number;
+  minMaxRad: 'auto' | number;
+};
+
+function setLinePoints(iterations: number) {
   const firstPoint: Point = { x: 0, y: 1 };
   const lastPoint: Point = { x: 1, y: 1 };
   let minY = 1;
@@ -133,28 +127,29 @@ class Smoke {
 
   displayHeight?: number;
 
-  constructor(element, options) {
+  constructor(element: Element, options: ISmokeSettings) {
     this.element = element;
     this.settings = {
       gradientStart: '#000000',
       gradientEnd: '#222222',
       smokeOpacity: 0.1,
       numCircles: 1,
-      maxMaxRad: 'auto',
-      minMaxRad: 'auto',
       minRadFactor: 0,
       iterations: 8,
       drawsPerFrame: 10,
       lineWidth: 2,
       speed: 1,
-      // Background
       bgColorInner: '#ffffff',
       bgColorOuter: '#666666',
       ...options,
     };
     const radius = (getElementHeight(this.element) * 0.8) / 2;
-    if (this.settings.maxMaxRad === 'auto') this.settings.maxMaxRad = radius;
-    if (this.settings.minMaxRad === 'auto') this.settings.minMaxRad = radius;
+    if (this.settings.maxMaxRad === 'auto' || !this.settings.maxMaxRad) {
+      this.settings.maxMaxRad = radius;
+    }
+    if (this.settings.minMaxRad === 'auto' || !this.settings.minMaxRad) {
+      this.settings.minMaxRad = radius;
+    }
     this.initCanvas();
     this.generate();
   }
@@ -343,11 +338,11 @@ class Smoke {
     }
   }
 
-  setOption(optionName, optionValue) {
+  public setOption<K extends keyof SmokeSettings>(optionName: K, optionValue: SmokeSettings[K]) {
     this.settings[optionName] = optionValue;
   }
 
-  download(width, height) {
+  public download(width: number, height: number) {
     // off screen canvas used only when exporting image
     this.exportCanvas = document.createElement('canvas');
     this.exportCanvas.width = this.displayWidth;
@@ -374,14 +369,16 @@ class Smoke {
       'fractalLineImage',
       `left=0,top=0,width=${width},height=${height},toolbar=0,resizable=0`,
     );
+    if (imageWindow === null) {
+      throw new Error('couldn\'t instantiate new window');
+    }
     // write some html into the new window, creating an empty image:
-    imageWindow.document.write('<title>Export Image</title>');
     imageWindow.document.write(
-      `<img id='exportImage' alt='' height='${height}' width='${width}' style='position:absolute;left:0;top:0'/>`,
+      `<title>Export Image</title><img id='exportImage' alt='' height='${height}' width='${width}' style='position:absolute;left:0;top:0'/>`,
     );
     imageWindow.document.close();
     // copy the image into the empty img in the newly opened window:
-    const exportImage = imageWindow.document.getElementById('exportImage');
+    const exportImage = imageWindow.document.getElementById('exportImage') as HTMLImageElement;
     exportImage.src = dataURL;
   }
 }
