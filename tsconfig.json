@@ -6,7 +6,7 @@
     "module": "commonjs",
     "moduleResolution": "classic",
     "outDir": "lib",
-    "sourceMap": true,
+    "sourceMap": false,
     "strict": true,
     "target": "es6"
   },

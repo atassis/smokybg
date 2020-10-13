@@ -1,6 +1,6 @@
 import { SmokeNiceBG } from "./smoky-background";
 
-function getElementHeight(element: Element) {
+function getElementHeight(element: Element): number {
   return Number.parseFloat(
     getComputedStyle(element, null).height.replace('px', ''),
   );
@@ -43,10 +43,24 @@ interface Point {
   next?: Point;
 }
 
-export type ISmokeSettings = Partial<SmokeSettings> & {
+export type ISmokeSettings = Partial<Omit<SmokeSettings, 'maxMaxRad' | 'minMaxRad'> & {
   maxMaxRad: 'auto' | number;
   minMaxRad: 'auto' | number;
-};
+}>;
+
+interface Circle {
+  centerX: number;
+  centerY: number;
+  maxRad: number;
+  minRad: number;
+  color: string | CanvasGradient | CanvasPattern;
+  param: number;
+  changeSpeed: number;
+  phase: number;
+  globalPhase: number;
+  pointList1: Point;
+  pointList2: Point;
+}
 
 function setLinePoints(iterations: number) {
   const firstPoint: Point = { x: 0, y: 1 };
@@ -113,7 +127,7 @@ class Smoke {
 
   element: Element;
 
-  displayCanvas: HTMLCanvasElement | null;
+  canvas: HTMLCanvasElement | null;
 
   context: CanvasRenderingContext2D | null;
 
@@ -123,8 +137,14 @@ class Smoke {
 
   timer?: number;
 
+  drawCount: number = 0;
+
+  circles: Circle[] = [];
+
   constructor(element: Element, options: ISmokeSettings) {
     this.element = element;
+    const radius = (getElementHeight(this.element) * 0.8) / 2;
+
     this.settings = {
       gradientStart: '#000000',
       gradientEnd: '#222222',
@@ -138,26 +158,33 @@ class Smoke {
       bgColorInner: '#ffffff',
       bgColorOuter: '#666666',
       ...options,
+      maxMaxRad: !options.maxMaxRad || options.maxMaxRad === 'auto' ? radius : options.maxMaxRad,
+      minMaxRad: !options.minMaxRad || options.minMaxRad === 'auto' ? radius : options.minMaxRad,
     };
-    const radius = (getElementHeight(this.element) * 0.8) / 2;
-    if (options.maxMaxRad === 'auto' || !options.maxMaxRad) {
-      this.settings.maxMaxRad = radius;
+    this.canvas = this.element.querySelector('canvas');
+    if (!this.canvas) {
+      throw new Error('you have to provide <canvas /> element in the wrapper')
     }
-    if (options.minMaxRad === 'auto' || !options.minMaxRad) {
-      this.settings.minMaxRad = radius;
-    }
-    this.displayCanvas = this.element.querySelector('canvas');
     this.displayWidth = this.element.clientWidth;
     this.displayHeight = this.element.clientHeight;
-    this.displayCanvas.width = this.displayWidth;
-    this.displayCanvas.height = this.displayHeight;
-    this.context = this.displayCanvas.getContext('2d');
+    this.canvas.width = this.displayWidth;
+    this.canvas.height = this.displayHeight;
+    this.context = this.canvas.getContext('2d');
 
     this.generate();
   }
 
   generate() {
     this.drawCount = 0;
+    if (!this.context) {
+      throw new Error('context is set to null!');
+    }
+    if (!this.displayWidth) {
+      throw new Error('displayWidth is falsy!');
+    }
+    if (!this.displayHeight) {
+      throw new Error('displayHeight is falsy!');
+    }
     this.context.setTransform(1, 0, 0, 1, 0, 0);
     this.context.clearRect(0, 0, this.displayWidth, this.displayHeight);
     this.fillBackground();
@@ -171,6 +198,15 @@ class Smoke {
   }
 
   fillBackground() {
+    if (!this.context) {
+      throw new Error('context is set to null!');
+    }
+    if (!this.displayWidth) {
+      throw new Error('displayWidth is falsy!');
+    }
+    if (!this.displayHeight) {
+      throw new Error('displayHeight is falsy!');
+    }
     const outerRad =
       Math.sqrt(
         this.displayWidth * this.displayWidth +
@@ -210,7 +246,10 @@ class Smoke {
 
       // define gradient
       if (!this.context) {
-        return;
+        throw new Error('context is set to null!');
+      }
+      if (!this.displayHeight) {
+        throw new Error('this.displayHeight is falsy!');
       }
       const grad = this.context.createRadialGradient(0, 0, minR, 0, 0, maxR);
       const gradientStart = hexToRGBA(
@@ -225,7 +264,7 @@ class Smoke {
       grad.addColorStop(1, gradientStart);
       grad.addColorStop(0, gradientEnd);
 
-      const newCircle = {
+      this.circles.push({
         centerX: -maxR,
         centerY: this.displayHeight / 2 - 50,
         maxRad: maxR,
@@ -237,18 +276,19 @@ class Smoke {
         globalPhase: Math.random() * TWO_PI, // the curve as a whole will rise and fall by a
         pointList1: setLinePoints(this.settings.iterations),
         pointList2: setLinePoints(this.settings.iterations),
-      };
-      this.circles.push(newCircle);
+      });
     }
   }
 
   onTimer() {
-    let i;
-    let j;
-    let c;
+    const { drawsPerFrame, iterations, maxMaxRad, numCircles } = this.settings;
+    if (!this.context) {
+      throw new Error('context is set to null!');
+    }
+    if (!this.displayWidth) {
+      throw new Error('displayWidth is falsy!');
+    }
     let rad;
-    let point1;
-    let point2;
     let x0;
     let y0;
     let cosParam;
@@ -258,41 +298,41 @@ class Smoke {
     let yOffset;
 
     // draw circles
-    for (j = 0; j < this.settings.drawsPerFrame; j += 1) {
+    for (let j = 0; j < drawsPerFrame; j += 1) {
       this.drawCount += 1;
 
-      for (i = 0; i < this.settings.numCircles; i += 1) {
-        c = this.circles[i];
-        c.param += c.changeSpeed;
-        if (c.param >= 1) {
-          c.param = 0;
+      for (let i = 0; i < numCircles; i += 1) {
+        const circle= this.circles[i];
+        circle.param += circle.changeSpeed;
+        if (circle.param >= 1) {
+          circle.param = 0;
 
-          c.pointList1 = c.pointList2;
-          c.pointList2 = setLinePoints(this.settings.iterations);
+          circle.pointList1 = circle.pointList2;
+          circle.pointList2 = setLinePoints(iterations);
         }
-        cosParam = 0.5 - 0.5 * Math.cos(Math.PI * c.param);
+        cosParam = 0.5 - 0.5 * Math.cos(Math.PI * circle.param);
 
-        this.context.strokeStyle = c.color;
+        this.context.strokeStyle = circle.color;
         this.context.lineWidth = this.settings.lineWidth;
         this.context.beginPath();
-        point1 = c.pointList1;
-        point2 = c.pointList2;
+        let point1 = circle.pointList1;
+        let point2 = circle.pointList2;
 
         // slowly rotate
-        c.phase += 0.0002;
+        circle.phase += 0.0002;
 
-        let theta = c.phase;
+        let theta = circle.phase;
         rad =
-          c.minRad +
-          (point1.y + cosParam * (point2.y - point1.y)) * (c.maxRad - c.minRad);
+          circle.minRad +
+          (point1.y + cosParam * (point2.y - point1.y)) * (circle.maxRad - circle.minRad);
 
         // move center
-        c.centerX += 0.5;
-        c.centerY += 0.04;
+        circle.centerX += 0.5;
+        circle.centerY += 0.04;
         yOffset =
-          40 * Math.sin(c.globalPhase + (this.drawCount / 1000) * TWO_PI);
+          40 * Math.sin(circle.globalPhase + (this.drawCount / 1000) * TWO_PI);
         // stop when off screen
-        if (c.centerX > this.displayWidth + this.settings.maxMaxRad) {
+        if (circle.centerX > this.displayWidth + maxMaxRad) {
           clearInterval(this.timer);
           this.timer = undefined;
         }
@@ -303,8 +343,8 @@ class Smoke {
           0,
           0,
           1,
-          c.centerX,
-          c.centerY + yOffset,
+          circle.centerX,
+          circle.centerY + yOffset,
         );
 
         // Drawing the curve involves stepping through a linked list of points defined by a fractal subdivision process.
@@ -314,13 +354,16 @@ class Smoke {
         this.context.lineTo(x0, y0);
         while (point1.next) {
           point1 = point1.next;
+          if (!point2.next) {
+            throw new Error('point2 shouldn\'t be falsy in this condition!');
+          }
           point2 = point2.next;
           theta =
-            TWO_PI * (point1.x + cosParam * (point2.x - point1.x)) + c.phase;
+            TWO_PI * (point1.x + cosParam * (point2.x - point1.x)) + circle.phase;
           rad =
-            c.minRad +
+            circle.minRad +
             (point1.y + cosParam * (point2.y - point1.y)) *
-            (c.maxRad - c.minRad);
+            (circle.maxRad - circle.minRad);
           x0 = xSqueeze * rad * Math.cos(theta);
           y0 = rad * Math.sin(theta);
           this.context.lineTo(x0, y0);
@@ -343,7 +386,7 @@ class Smoke {
 
     const exportContext = exportCanvas.getContext('2d') as CanvasRenderingContext2D;
     exportContext.drawImage(
-      this.displayCanvas as HTMLCanvasElement,
+      this.canvas as HTMLCanvasElement,
       0,
       0,
       width,

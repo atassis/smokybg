@@ -62,7 +62,6 @@ class SmokeNiceBG {
 
     const image = ctx.getImageData(rectX0, rectY0, rectW, rectH);
     const pixelData = image.data;
-    const len = pixelData.length;
     let nearestValue;
     let quantError;
     let x;
@@ -73,15 +72,8 @@ class SmokeNiceBG {
     let r;
     let g;
     let b;
-    let r0;
-    let g0;
-    let b0;
-    let r1;
-    let g1;
-    let b1;
     let ratio0;
     let ratio1;
-    let f;
     let stopNumber;
     let found;
     let q;
@@ -121,7 +113,7 @@ class SmokeNiceBG {
     }
 
     // create float valued gradient
-    for (let i = 0; i < len / 4; i += 1) {
+    for (let i = 0; i < pixelData.length / 4; i += 1) {
       x = rectX0 + (i % rectW);
       y = rectY0 + Math.floor(i / rectW);
 
@@ -155,16 +147,16 @@ class SmokeNiceBG {
         }
 
         // calculate color.
-        r0 = this.colorStops[stopNumber - 1].r;
-        g0 = this.colorStops[stopNumber - 1].g;
-        b0 = this.colorStops[stopNumber - 1].b;
-        r1 = this.colorStops[stopNumber].r;
-        g1 = this.colorStops[stopNumber].g;
-        b1 = this.colorStops[stopNumber].b;
+        const r0 = this.colorStops[stopNumber - 1].r;
+        const g0 = this.colorStops[stopNumber - 1].g;
+        const b0 = this.colorStops[stopNumber - 1].b;
+        const r1 = this.colorStops[stopNumber].r;
+        const g1 = this.colorStops[stopNumber].g;
+        const b1 = this.colorStops[stopNumber].b;
         ratio0 = this.colorStops[stopNumber - 1].ratio;
         ratio1 = this.colorStops[stopNumber].ratio;
 
-        f = (ratio - ratio0) / (ratio1 - ratio0);
+        const f = (ratio - ratio0) / (ratio1 - ratio0);
         r = r0 + (r1 - r0) * f;
         g = g0 + (g1 - g0) * f;
         b = b0 + (b1 - b0) * f;
@@ -177,21 +169,34 @@ class SmokeNiceBG {
     }
 
     // While converting floats to integer valued color values, apply Floyd-Steinberg dither.
-    for (let i = 0; i < len / 4; i += 1) {
+    for (let i = 0; i < pixelData.length / 4; i += 1) {
+      /* @ts-ignore */
       nearestValue = ~~rBuffer[i];
+      /* @ts-ignore */
       quantError = rBuffer[i] - nearestValue;
+      /* @ts-ignore */
       rBuffer[i + 1] += (7 / 16) * quantError;
+      /* @ts-ignore */
       rBuffer[i - 1 + rectW] += (3 / 16) * quantError;
+      /* @ts-ignore */
       rBuffer[i + rectW] += (5 / 16) * quantError;
+      /* @ts-ignore */
       rBuffer[i + 1 + rectW] += (1 / 16) * quantError;
 
+      /* @ts-ignore */
       nearestValue = ~~gBuffer[i];
+      /* @ts-ignore */
       quantError = gBuffer[i] - nearestValue;
+      /* @ts-ignore */
       gBuffer[i + 1] += (7 / 16) * quantError;
+      /* @ts-ignore */
       gBuffer[i - 1 + rectW] += (3 / 16) * quantError;
+      /* @ts-ignore */
       gBuffer[i + rectW] += (5 / 16) * quantError;
+      /* @ts-ignore */
       gBuffer[i + 1 + rectW] += (1 / 16) * quantError;
 
+      /* @ts-ignore end */
       nearestValue = ~~bBuffer[i];
       quantError = bBuffer[i] - nearestValue;
       bBuffer[i + 1] += (7 / 16) * quantError;
@@ -201,9 +206,11 @@ class SmokeNiceBG {
     }
 
     // copy to pixel data
-    for (let i = 0; i < len; i += 4) {
+    for (let i = 0; i < pixelData.length; i += 4) {
       q = i / 4;
+      /* @ts-ignore */
       pixelData[i] = ~~rBuffer[q];
+      /* @ts-ignore */
       pixelData[i + 1] = ~~gBuffer[q];
       pixelData[i + 2] = ~~bBuffer[q];
       pixelData[i + 3] = 255;
