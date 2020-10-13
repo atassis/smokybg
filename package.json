@@ -1,0 +1,26 @@
+{
+  "name": "smokybg",
+  "version": "0.0.1",
+  "description": "",
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsc --watch",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atassis/waterpipe.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/atassis/waterpipe/issues"
+  },
+  "homepage": "https://github.com/atassis/waterpipe#readme",
+  "devDependencies": {
+    "typescript": "^4.0.3"
+  }
+}

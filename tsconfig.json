@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "declaration": true,
+    "esModuleInterop": true,
+    "lib": ["es2017", "es7", "es6", "dom"],
+    "module": "commonjs",
+    "moduleResolution": "classic",
+    "outDir": "lib",
+    "sourceMap": true,
+    "strict": true,
+    "target": "es6"
+  },
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
