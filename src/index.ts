@@ -20,7 +20,6 @@ function hexToRGBA(hex: string, opacity: number): string {
 }
 
 const TWO_PI = 2 * Math.PI;
-let timer: number;
 
 type SmokeSettings = {
   gradientStart: string;
@@ -116,16 +115,13 @@ class Smoke {
 
   displayCanvas: HTMLCanvasElement | null;
 
-  exportCanvas: HTMLCanvasElement;
-
-  // eslint-disable-next-line react/static-property-placement
   context: CanvasRenderingContext2D | null;
-
-  exportContext: CanvasRenderingContext2D | null;
 
   displayWidth?: number;
 
   displayHeight?: number;
+
+  timer?: number;
 
   constructor(element: Element, options: ISmokeSettings) {
     this.element = element;
@@ -144,23 +140,20 @@ class Smoke {
       ...options,
     };
     const radius = (getElementHeight(this.element) * 0.8) / 2;
-    if (this.settings.maxMaxRad === 'auto' || !this.settings.maxMaxRad) {
+    if (options.maxMaxRad === 'auto' || !options.maxMaxRad) {
       this.settings.maxMaxRad = radius;
     }
-    if (this.settings.minMaxRad === 'auto' || !this.settings.minMaxRad) {
+    if (options.minMaxRad === 'auto' || !options.minMaxRad) {
       this.settings.minMaxRad = radius;
     }
-    this.initCanvas();
-    this.generate();
-  }
-
-  initCanvas() {
     this.displayCanvas = this.element.querySelector('canvas');
     this.displayWidth = this.element.clientWidth;
     this.displayHeight = this.element.clientHeight;
     this.displayCanvas.width = this.displayWidth;
     this.displayCanvas.height = this.displayHeight;
     this.context = this.displayCanvas.getContext('2d');
+
+    this.generate();
   }
 
   generate() {
@@ -171,10 +164,10 @@ class Smoke {
 
     this.setCircles();
 
-    if (timer) {
-      clearInterval(timer);
+    if (this.timer) {
+      clearInterval(this.timer);
     }
-    timer = setInterval(this.onTimer.bind(this), this.settings.speed);
+    this.timer = setInterval(this.onTimer.bind(this), this.settings.speed);
   }
 
   fillBackground() {
@@ -300,8 +293,8 @@ class Smoke {
           40 * Math.sin(c.globalPhase + (this.drawCount / 1000) * TWO_PI);
         // stop when off screen
         if (c.centerX > this.displayWidth + this.settings.maxMaxRad) {
-          clearInterval(timer);
-          timer = null;
+          clearInterval(this.timer);
+          this.timer = undefined;
         }
 
         // we are drawing in new position by applying a transform. We are doing this so the gradient will move with the drawing.
@@ -343,14 +336,14 @@ class Smoke {
   }
 
   public download(width: number, height: number) {
-    // off screen canvas used only when exporting image
-    this.exportCanvas = document.createElement('canvas');
-    this.exportCanvas.width = this.displayWidth;
-    this.exportCanvas.height = this.displayHeight;
+    const exportCanvas = document.createElement('canvas') as HTMLCanvasElement;
 
-    this.exportContext = this.exportCanvas.getContext('2d');
-    this.exportContext.drawImage(
-      this.displayCanvas,
+    exportCanvas.width = this.displayWidth as number;
+    exportCanvas.height = this.displayHeight as number;
+
+    const exportContext = exportCanvas.getContext('2d') as CanvasRenderingContext2D;
+    exportContext.drawImage(
+      this.displayCanvas as HTMLCanvasElement,
       0,
       0,
       width,
@@ -362,7 +355,7 @@ class Smoke {
     );
     // we will open a new window with the image contained within:
     // retrieve canvas image as data URL:
-    const dataURL = this.exportCanvas.toDataURL('image/png');
+    const dataURL = exportCanvas.toDataURL('image/png');
     // open a new window of appropriate size to hold the image:
     const imageWindow = window.open(
       '',
