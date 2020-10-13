@@ -125,8 +125,6 @@ function setLinePoints(iterations: number) {
 class Smoke {
   private settings: SmokeSettings;
 
-  element: Element;
-
   canvas: HTMLCanvasElement | null;
 
   context: CanvasRenderingContext2D | null;
@@ -141,9 +139,9 @@ class Smoke {
 
   circles: Circle[] = [];
 
-  constructor(element: Element, options: ISmokeSettings) {
-    this.element = element;
-    const radius = (getElementHeight(this.element) * 0.8) / 2;
+  constructor(canvasElement: HTMLCanvasElement, options: ISmokeSettings) {
+    this.canvas = canvasElement;
+    const radius = (getElementHeight(this.canvas) * 0.8) / 2;
 
     this.settings = {
       gradientStart: '#000000',
@@ -161,14 +159,11 @@ class Smoke {
       maxMaxRad: !options.maxMaxRad || options.maxMaxRad === 'auto' ? radius : options.maxMaxRad,
       minMaxRad: !options.minMaxRad || options.minMaxRad === 'auto' ? radius : options.minMaxRad,
     };
-    this.canvas = this.element.querySelector('canvas');
     if (!this.canvas) {
       throw new Error('you have to provide <canvas /> element in the wrapper')
     }
-    this.displayWidth = this.element.clientWidth;
-    this.displayHeight = this.element.clientHeight;
-    this.canvas.width = this.displayWidth;
-    this.canvas.height = this.displayHeight;
+    this.displayWidth = this.canvas.clientWidth;
+    this.displayHeight = this.canvas.clientHeight;
     this.context = this.canvas.getContext('2d');
 
     this.generate();
