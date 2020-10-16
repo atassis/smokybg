@@ -1,6 +1,6 @@
 # Smokybg
 
-This is a rewritten analog of [waterpipe.js jQuery plugin](https://github.com/dragdropsite/waterpipe.js/), but rewritten in typescript and usable as a common npm module with types (not perfectly typed tho)
+This is an analog of [waterpipe.js jQuery plugin](https://github.com/dragdropsite/waterpipe.js/), but rewritten in typescript and usable as a common npm module with types (not perfectly typed tho)
 
 ## Install
 
@@ -9,9 +9,7 @@ npm i smokybg
 ```
 ## Usage
 ```html
-<div id="smoky-wrapper" style="width: 100%; height: 100%;"> 
-    <canvas>Your browser does not support HTML5 canvas.</canvas>
-</div>
+<canvas id="smoky-wrapper" style="width: 100%; height: 100%;">Your browser does not support HTML5 canvas.</canvas>
 ```
 ```typescript
 import { Smoke } from 'smokybg';

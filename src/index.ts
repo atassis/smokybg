@@ -1,4 +1,4 @@
-import { SmokeNiceBG } from "./smoky-background";
+import { SmokeNiceBG } from './smoky-background';
 
 function getElementHeight(element: Element): number {
   return Number.parseFloat(
@@ -125,13 +125,9 @@ function setLinePoints(iterations: number) {
 class Smoke {
   private settings: SmokeSettings;
 
-  canvas: HTMLCanvasElement | null;
+  canvas: HTMLCanvasElement;
 
-  context: CanvasRenderingContext2D | null;
-
-  displayWidth?: number;
-
-  displayHeight?: number;
+  context: CanvasRenderingContext2D;
 
   timer?: number;
 
@@ -141,6 +137,7 @@ class Smoke {
 
   constructor(canvasElement: HTMLCanvasElement, options: ISmokeSettings = {}) {
     this.canvas = canvasElement;
+
     const radius = getElementHeight(this.canvas) * 0.4;
 
     this.settings = {
@@ -162,9 +159,7 @@ class Smoke {
     if (!this.canvas) {
       throw new Error('you have to provide an id of <canvas /> element')
     }
-    this.displayWidth = this.canvas.clientWidth;
-    this.displayHeight = this.canvas.clientHeight;
-    this.context = this.canvas.getContext('2d');
+    this.context = this.canvas.getContext('2d') as CanvasRenderingContext2D;
 
     this.generate();
   }
@@ -174,14 +169,13 @@ class Smoke {
     if (!this.context) {
       throw new Error('context is set to null!');
     }
-    if (!this.displayWidth) {
-      throw new Error('displayWidth is falsy!');
+    if (!this.canvas) {
+      throw new Error('canvas is set to null!');
     }
-    if (!this.displayHeight) {
-      throw new Error('displayHeight is falsy!');
-    }
+
+    const { clientHeight, clientWidth } = this.canvas;
     this.context.setTransform(1, 0, 0, 1, 0, 0);
-    this.context.clearRect(0, 0, this.displayWidth, this.displayHeight);
+    this.context.clearRect(0, 0, clientWidth, clientHeight);
     this.fillBackground();
 
     this.setCircles();
@@ -197,23 +191,21 @@ class Smoke {
     if (!this.context) {
       throw new Error('context is set to null!');
     }
-    if (!this.displayWidth) {
-      throw new Error('displayWidth is falsy!');
+    if (!this.canvas) {
+      throw new Error('canvas is set to null!');
     }
-    if (!this.displayHeight) {
-      throw new Error('displayHeight is falsy!');
-    }
+    const { clientHeight, clientWidth } = this.canvas;
     const outerRad =
       Math.sqrt(
-        this.displayWidth * this.displayWidth +
-        this.displayHeight * this.displayHeight,
+        clientWidth * clientWidth +
+        clientHeight * clientHeight,
       ) / 2;
     const gradient = new SmokeNiceBG(
-      this.displayWidth * 0.75,
-      (this.displayHeight / 2) * 0.75,
+      clientWidth * 0.75,
+      (clientHeight / 2) * 0.75,
       0,
-      this.displayWidth / 2,
-      this.displayHeight / 4,
+      clientWidth / 2,
+      clientHeight / 4,
       outerRad,
     );
 
@@ -223,40 +215,39 @@ class Smoke {
       this.context,
       0,
       0,
-      this.displayWidth,
-      this.displayHeight,
+      clientWidth,
+      clientHeight,
     );
   }
 
   setCircles() {
+    if (!this.context) {
+      throw new Error('context is set to null!');
+    }
+    if (!this.canvas) {
+      throw new Error('canvas is set to null!');
+    }
     const { gradientEnd, gradientStart, iterations, maxMaxRad, minMaxRad, minRadFactor, numCircles, smokeOpacity } = this.settings;
-    let maxR;
-    let minR;
+    const { clientHeight } = this.canvas;
+
 
     this.circles = [];
 
     for (let i = 0; i < numCircles; i += 1) {
-      maxR = minMaxRad + Math.random() * (maxMaxRad - minMaxRad);
-      minR = minRadFactor * maxR;
+      const maxR = minMaxRad + Math.random() * (maxMaxRad - minMaxRad);
+      const minR = minRadFactor * maxR;
 
-      // define gradient
-      if (!this.context) {
-        throw new Error('context is set to null!');
-      }
-      if (!this.displayHeight) {
-        throw new Error('this.displayHeight is falsy!');
-      }
-      const grad = this.context.createRadialGradient(0, 0, minR, 0, 0, maxR);
+      const gradient = this.context.createRadialGradient(0, 0, minR, 0, 0, maxR);
 
-      grad.addColorStop(1, hexToRGBA(gradientStart, smokeOpacity));
-      grad.addColorStop(0, hexToRGBA(gradientEnd, smokeOpacity));
+      gradient.addColorStop(1, hexToRGBA(gradientStart, smokeOpacity));
+      gradient.addColorStop(0, hexToRGBA(gradientEnd, smokeOpacity));
 
       this.circles.push({
         centerX: -maxR,
-        centerY: this.displayHeight / 2 - 50,
+        centerY: clientHeight / 2 - 50,
         maxRad: maxR,
         minRad: minR,
-        color: grad, // can set a gradient or solid color here.
+        color: gradient, // can set a gradient or solid color here.
         param: 0,
         changeSpeed: 1 / 250,
         phase: Math.random() * TWO_PI, // the phase to use for a single fractal curve.
@@ -272,9 +263,7 @@ class Smoke {
     if (!this.context) {
       throw new Error('context is set to null!');
     }
-    if (!this.displayWidth) {
-      throw new Error('displayWidth is falsy!');
-    }
+    const { clientWidth } = this.canvas;
     let rad;
     let x0;
     let y0;
@@ -319,7 +308,7 @@ class Smoke {
         yOffset =
           40 * Math.sin(circle.globalPhase + (this.drawCount / 1000) * TWO_PI);
         // stop when off screen
-        if (circle.centerX > this.displayWidth + maxMaxRad) {
+        if (circle.centerX > clientWidth + maxMaxRad) {
           clearInterval(this.timer);
           this.timer = undefined;
         }
@@ -367,13 +356,14 @@ class Smoke {
 
   public download(width: number, height: number) {
     const exportCanvas = document.createElement('canvas') as HTMLCanvasElement;
+    const { clientHeight, clientWidth } = this.canvas;
 
-    exportCanvas.width = this.displayWidth as number;
-    exportCanvas.height = this.displayHeight as number;
+    exportCanvas.width = clientWidth as number;
+    exportCanvas.height = clientHeight as number;
 
     const exportContext = exportCanvas.getContext('2d') as CanvasRenderingContext2D;
     exportContext.drawImage(
-      this.canvas as HTMLCanvasElement,
+      this.canvas,
       0,
       0,
       width,

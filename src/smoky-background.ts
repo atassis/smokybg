@@ -23,20 +23,21 @@ class SmokeNiceBG {
   }
 
   addColorStop(ratio: number, r: number, g: number, b: number) {
+    const { colorStops } = this;
     if (ratio < 0 || ratio > 1) {
       return;
     }
     const newStop = { ratio, r, g, b };
     if (ratio >= 0 && ratio <= 1) {
-      if (this.colorStops.length === 0) {
-        this.colorStops.push(newStop);
+      if (colorStops.length === 0) {
+        colorStops.push(newStop);
       } else {
         let i = 0;
         let found = false;
-        const len = this.colorStops.length;
+        const len = colorStops.length;
         // search for proper place to put stop in order.
         while (!found && i < len) {
-          found = ratio <= this.colorStops[i].ratio;
+          found = ratio <= colorStops[i].ratio;
           if (!found) {
             i += 1;
           }
@@ -44,19 +45,20 @@ class SmokeNiceBG {
         // add stop - remove next one if duplicate ratio
         if (!found) {
           // place at end
-          this.colorStops.push(newStop);
-        } else if (ratio === this.colorStops[i].ratio) {
+          colorStops.push(newStop);
+        } else if (ratio === colorStops[i].ratio) {
           // replace
-          this.colorStops.splice(i, 1, newStop);
+          colorStops.splice(i, 1, newStop);
         } else {
-          this.colorStops.splice(i, 0, newStop);
+          colorStops.splice(i, 0, newStop);
         }
       }
     }
   }
 
   fillRect(ctx: CanvasRenderingContext2D, rectX0: number, rectY0: number, rectW: number, rectH: number) {
-    if (this.colorStops.length === 0) {
+    const { colorStops, rad0, rad1, x0, x1, y0, y1 } = this;
+    if (colorStops.length === 0) {
       return;
     }
 
@@ -64,16 +66,9 @@ class SmokeNiceBG {
     const pixelData = image.data;
     let nearestValue;
     let quantError;
-    let x;
-    let y;
 
     let ratio;
 
-    let r;
-    let g;
-    let b;
-    let ratio0;
-    let ratio1;
     let stopNumber;
     let found;
     let q;
@@ -82,49 +77,48 @@ class SmokeNiceBG {
     const gBuffer = [];
     const bBuffer = [];
 
-    let c;
-    let discrim;
-    let dx;
-    let dy;
 
-    const xDiff = this.x1 - this.x0;
-    const yDiff = this.y1 - this.y0;
-    const rDiff = this.rad1 - this.rad0;
-    const rConst1 = 2 * this.rad0 * (this.rad1 - this.rad0);
-    const r0Square = this.rad0 * this.rad0;
+    const xDiff = x1 - x0;
+    const yDiff = y1 - y0;
+    const rDiff = rad1 - rad0;
+    const rConst1 = 2 * rad0 * (rad1 - rad0);
+    const r0Square = rad0 * rad0;
     const a = rDiff * rDiff - xDiff * xDiff - yDiff * yDiff;
 
     // first complete color stops with 0 and 1 ratios if not already present
-    if (this.colorStops[0].ratio !== 0) {
-      this.colorStops.splice(0, 0, {
+    if (colorStops[0].ratio !== 0) {
+      colorStops.splice(0, 0, {
         ratio: 0,
-        r: this.colorStops[0].r,
-        g: this.colorStops[0].g,
-        b: this.colorStops[0].b,
+        r: colorStops[0].r,
+        g: colorStops[0].g,
+        b: colorStops[0].b,
       });
     }
-    if (this.colorStops[this.colorStops.length - 1].ratio !== 1) {
-      this.colorStops.push({
+    if (colorStops[colorStops.length - 1].ratio !== 1) {
+      colorStops.push({
         ratio: 1,
-        r: this.colorStops[this.colorStops.length - 1].r,
-        g: this.colorStops[this.colorStops.length - 1].g,
-        b: this.colorStops[this.colorStops.length - 1].b,
+        r: colorStops[colorStops.length - 1].r,
+        g: colorStops[colorStops.length - 1].g,
+        b: colorStops[colorStops.length - 1].b,
       });
     }
 
+    let red;
+    let green;
+    let blue;
     // create float valued gradient
     for (let i = 0; i < pixelData.length / 4; i += 1) {
-      x = rectX0 + (i % rectW);
-      y = rectY0 + Math.floor(i / rectW);
+      let x = rectX0 + (i % rectW);
+      let y = rectY0 + Math.floor(i / rectW);
 
-      dx = x - this.x0;
-      dy = y - this.y0;
-      b = rConst1 + 2 * (dx * xDiff + dy * yDiff);
-      c = r0Square - dx * dx - dy * dy;
-      discrim = b * b - 4 * a * c;
+      let dx = x - x0;
+      let dy = y - y0;
+      const b = rConst1 + 2 * (dx * xDiff + dy * yDiff);
+      const c = r0Square - dx * dx - dy * dy;
+      const discriminant = b * b - 4 * a * c;
 
-      if (discrim >= 0) {
-        ratio = (-b + Math.sqrt(discrim)) / (2 * a);
+      if (discriminant >= 0) {
+        ratio = (-b + Math.sqrt(discriminant)) / (2 * a);
 
         if (ratio < 0) {
           ratio = 0;
@@ -134,12 +128,12 @@ class SmokeNiceBG {
 
         // find out what two stops this is between
         if (ratio === 1) {
-          stopNumber = this.colorStops.length - 1;
+          stopNumber = colorStops.length - 1;
         } else {
           stopNumber = 0;
           found = false;
           while (!found) {
-            found = ratio < this.colorStops[stopNumber].ratio;
+            found = ratio < colorStops[stopNumber].ratio;
             if (!found) {
               stopNumber += 1;
             }
@@ -147,25 +141,26 @@ class SmokeNiceBG {
         }
 
         // calculate color.
-        const r0 = this.colorStops[stopNumber - 1].r;
-        const g0 = this.colorStops[stopNumber - 1].g;
-        const b0 = this.colorStops[stopNumber - 1].b;
-        const r1 = this.colorStops[stopNumber].r;
-        const g1 = this.colorStops[stopNumber].g;
-        const b1 = this.colorStops[stopNumber].b;
-        ratio0 = this.colorStops[stopNumber - 1].ratio;
-        ratio1 = this.colorStops[stopNumber].ratio;
+        const r0 = colorStops[stopNumber - 1].r;
+        const g0 = colorStops[stopNumber - 1].g;
+        const b0 = colorStops[stopNumber - 1].b;
+        const r1 = colorStops[stopNumber].r;
+        const g1 = colorStops[stopNumber].g;
+        const b1 = colorStops[stopNumber].b;
+
+        let ratio0 = colorStops[stopNumber - 1].ratio;
+        let ratio1 = colorStops[stopNumber].ratio;
 
         const f = (ratio - ratio0) / (ratio1 - ratio0);
-        r = r0 + (r1 - r0) * f;
-        g = g0 + (g1 - g0) * f;
-        b = b0 + (b1 - b0) * f;
+        red = r0 + (r1 - r0) * f;
+        green = g0 + (g1 - g0) * f;
+        blue = b0 + (b1 - b0) * f;
       }
 
       // set color as float values in buffer arrays
-      rBuffer.push(r);
-      gBuffer.push(g);
-      bBuffer.push(b);
+      rBuffer.push(red);
+      gBuffer.push(green);
+      bBuffer.push(blue);
     }
 
     // While converting floats to integer valued color values, apply Floyd-Steinberg dither.
@@ -198,10 +193,15 @@ class SmokeNiceBG {
 
       /* @ts-ignore end */
       nearestValue = ~~bBuffer[i];
+      /* @ts-ignore */
       quantError = bBuffer[i] - nearestValue;
+      /* @ts-ignore */
       bBuffer[i + 1] += (7 / 16) * quantError;
+      /* @ts-ignore */
       bBuffer[i - 1 + rectW] += (3 / 16) * quantError;
+      /* @ts-ignore */
       bBuffer[i + rectW] += (5 / 16) * quantError;
+      /* @ts-ignore */
       bBuffer[i + 1 + rectW] += (1 / 16) * quantError;
     }
 
@@ -212,6 +212,7 @@ class SmokeNiceBG {
       pixelData[i] = ~~rBuffer[q];
       /* @ts-ignore */
       pixelData[i + 1] = ~~gBuffer[q];
+      /* @ts-ignore */
       pixelData[i + 2] = ~~bBuffer[q];
       pixelData[i + 3] = 255;
     }

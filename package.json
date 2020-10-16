@@ -8,12 +8,11 @@
     "build": "tsc",
     "start": "tsc --watch",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "prepublish": "tsc"
+    "prepare": "tsc"
   },
-  "publishConfig": { "registry": "https://npm.pkg.github.com/" },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/atassis/waterpipe.git"
+    "url": "git+https://github.com/atassis/smokybg.git"
   },
   "keywords": [],
   "author": {
@@ -23,9 +22,9 @@
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/atassis/waterpipe/issues"
+    "url": "https://github.com/atassis/smokybg/issues"
   },
-  "homepage": "https://github.com/atassis/waterpipe#readme",
+  "homepage": "https://github.com/atassis/smokybg#readme",
   "devDependencies": {
     "typescript": "^4.0.3"
   }
